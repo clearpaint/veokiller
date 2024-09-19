@@ -1,5 +1,6 @@
 # veokiller
 Capstone work on video analysis
+
 Week 1: Reviewed a few differnt options for capstone work: 
 Option 1: Write some video analysis tools that can detect players do segmentation etc. 
 Option 2: Design a system that looks just like VEO's for ~$300 and do option 1 on devivce.
