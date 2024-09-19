@@ -26,6 +26,8 @@ Camera Module(s): https://a.co/d/hOJH2Og  or https://a.co/d/42IJGB2
 
 NVIDIA Jetson boards come packed with developer tools and are ment to be an out of the box video AI platform.
 
+https://github.com/mkoshkina/jersey-number-pipeline
+
 Option 3 highlevel plan:
 
 Aquire a ~high end ethernet TAP , connect my VEO cam through the TAP capture rx/tx do the analysis , spoof server side and capture video packets , reasemble packets into a video. No more need for subscrition service. 
