@@ -31,3 +31,6 @@ https://github.com/mkoshkina/jersey-number-pipeline
 Option 3 highlevel plan:
 
 Aquire a ~high end ethernet TAP , connect my VEO cam through the TAP capture rx/tx do the analysis , spoof server side and capture video packets , reasemble packets into a video. No more need for subscrition service. 
+
+
+Start playing with this before hardwares in https://github.com/Seeed-Projects/jetson-examples/blob/main/reComputer/scripts/ultralytics-yolo/README.md
