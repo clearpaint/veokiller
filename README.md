@@ -34,3 +34,10 @@ Aquire a ~high end ethernet TAP , connect my VEO cam through the TAP capture rx/
 
 
 Start playing with this before hardwares in https://github.com/Seeed-Projects/jetson-examples/blob/main/reComputer/scripts/ultralytics-yolo/README.md
+
+
+
+Week 3:
+Received NVIDA Jetson Xavier NX Dev kit.
+Loading image https://developer.nvidia.com/embedded/jetpack-sdk-514 
+Will try and get a simple project going and feed it some video . 
