@@ -37,7 +37,13 @@ Start playing with this before hardwares in https://github.com/Seeed-Projects/je
 
 
 
+
 Week 3:
 Received NVIDA Jetson Xavier NX Dev kit.
 Loading image https://developer.nvidia.com/embedded/jetpack-sdk-514 
 Will try and get a simple project going and feed it some video . 
+
+Had a little trouble, the BSP on the device was for a really old image, had to download and install an ancient version on the sd card and load Ubuntu. I have the developer kit booting up and the serial connection working. 
+
+Next is to start a small project and learn the compilers for this stuff. 
+
