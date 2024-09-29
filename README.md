@@ -47,3 +47,5 @@ Had a little trouble, the BSP on the device was for a really old image, had to d
 
 Next is to start a small project and learn the compilers for this stuff. 
 
+https://www.nvidia.com/en-us/on-demand/session/gtcspring21-s31351/
+
