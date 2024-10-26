@@ -37,7 +37,6 @@ Start playing with this before hardwares in https://github.com/Seeed-Projects/je
 
 
 
-
 Week 3:
 Received NVIDA Jetson Xavier NX Dev kit.
 Loading image https://developer.nvidia.com/embedded/jetpack-sdk-514 
@@ -48,4 +47,13 @@ Had a little trouble, the BSP on the device was for a really old image, had to d
 Next is to start a small project and learn the compilers for this stuff. 
 
 https://www.nvidia.com/en-us/on-demand/session/gtcspring21-s31351/
+
+Week 4: Worked through all kinds of issues with the NVIDIA SDK Manager clunky and not really a great first experience with their tool chain. Did get to run some code on the device, but the dependcies hell is real, mis match on packages and the board being a little older means i can just get latest and have to cherry pick changes, which is just about impossible.
+was able to process some vide using YOLO , it works the further segmentation and following , i cant really do without heavier duty pc. 
+
+Week 5: Pivoted to developing the front end of the interface, have a Lite Flask Web server (Flask Video Viewer) up and mostly feature complete. this will get intigrated into the video AI portion later.
+
+Week 6: Ordered a NVIDIA T4 , going to put in an older server I have , setup tool chain and try running the code there , seeing as how the depends hell of doing it on the older Jetson just was not going to work out. Still plan to come back to the embeded HW to try and do the video capture at a minimum. 
+
+Week 7: Get the existing code running on the server.. Both the front end and early detection. 
 
