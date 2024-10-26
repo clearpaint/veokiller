@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Video Tagging App</title>
+    <!-- Include Bootstrap CSS for modern styling -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Include custom CSS for blackout theme -->
+    <style>
+        body {
+            background-color: #000;
+            color: #fff;
+        }
+        .container {
+            margin-top: 20px;
+        }
+        /* Style buttons to be neutral and minimalistic */
+        button, .btn {
+            background-color: #1e1e1e;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 12px;
+            margin-right: 5px;
+        }
+        button:hover, .btn:hover {
+            background-color: #333;
+        }
+        /* Style inputs and selects */
+        input, select {
+            background-color: #1e1e1e;
+            color: #fff;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 6px 10px;
+            margin-right: 5px;
+        }
+        input::placeholder {
+            color: #777;
+        }
+        /* Update the "Load Video" button */
+        .custom-file-input {
+            display: none;
+        }
+        .custom-file-label {
+            background-color: #1e1e1e;
+            color: #fff;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 8px 12px;
+            cursor: pointer;
+            display: inline-block;
+            width: auto;
+        }
+        .custom-file-label:hover {
+            background-color: #333;
+        }
+        /* Style the tag list */
+        .list-group-item {
+            background-color: #1e1e1e;
+            border: 1px solid #333;
+            color: #fff;
+        }
+        .list-group-item:hover, .list-group-item.active {
+            background-color: #333;
+        }
+        /* Style the timeline */
+        #timeline {
+            position: relative;
+            bottom: 10px;
+            width: 100%;
+            height: 10px;
+            background-color: #333;
+            border-radius: 5px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        .tag-range {
+            position: absolute;
+            top: 0;
+            height: 10px;
+            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+        .tag-range.highlighted {
+            background-color: rgba(255, 255, 255, 0.6);
+        }
+
+         .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+
+        .modal-content {
+            background-color: #1e1e1e;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+
+        .close {
+            color: #fff;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #ff1a1a;
+        }
+        /* General styles */
+        h1, h3, label {
+            color: #fff;
+        }
+        .btn-remove {
+            color: #ff4d4d;
+            background: none;
+            border: none;
+            padding: 0;
+        }
+        .btn-remove:hover {
+            color: #ff1a1a;
+        }
+        /* Video player background */
+        video {
+            background-color: #000;
+        }
+        /* Modal styles */
+        .modal-content {
+            background-color: #1e1e1e;
+            color: #fff;
+        }
+        .modal-header, .modal-footer {
+            border-color: #333;
+        }
+        .close {
+            color: #fff;
+        }
+        .close:hover {
+            color: #ff1a1a;
+        }
+        /* Feedback message */
+        #uploadProgress {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #0f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Video Tagging App</h1>
+        <div class="form-group">
+            <label for="videoFileInput" class="custom-file-label">Choose Video File</label>
+            <input type="file" id="videoFileInput" accept="video/*" class="custom-file-input">
+        </div>
+        <div id="uploadProgress"></div>
+        <video id="videoPlayer" width="100%" height="auto" controls class="mt-3">
+            Your browser does not support the video tag.
+        </video>
+
+        <div id="timeline"></div>
+
+        <div id="controls" class="mt-3">
+            <label>Playback Speed:</label>
+            <div class="btn-group" role="group">
+                <button class="btn" onclick="setPlaybackRate(1)">1x</button>
+                <button class="btn" onclick="setPlaybackRate(1.5)">1.5x</button>
+                <button class="btn" onclick="setPlaybackRate(2)">2x</button>
+                <button class="btn" onclick="setPlaybackRate(2.5)">2.5x</button>
+                <button class="btn" onclick="setPlaybackRate(3)">3x</button>
+            </div>
+        </div>
+
+        <div id="taggingControls" class="mt-3">
+            <label for="tagType">Tag Type:</label>
+            <select id="tagType">
+                <option value="Highlight">Highlight</option>
+                <option value="Note">Note</option>
+            </select>
+            <input type="text" id="tagDescription" placeholder="Tag Description">
+            <button class="btn" id="startTagButton" onclick="startTag()">Start Tag</button>
+            <button class="btn" id="stopTagButton" onclick="stopTag()" disabled>Stop Tag</button>
+            <button class="btn" id="playHighlightsButton" onclick="playHighlights()">Play Highlights</button>
+        </div>
+
+        <div id="exportButton" class="mt-3">
+            <button class="btn" onclick="exportTags()">Export Tags</button>
+            <button class="btn" onclick="saveSession()">Save Session</button>
+            <button class="btn" onclick="loadSession()">Load Session</button>
+            <input type="text" id="sessionName" placeholder="Session Name">
+            <!-- New buttons for exporting clips -->
+            <button class="btn" id="exportClipsButton" onclick="exportClips()" disabled>Export Clips</button>
+            <button class="btn" id="concatenateClipsButton" onclick="concatenateClips()" disabled>Concatenate Clips</button>
+        </div>
+
+        <div id="tagList" class="mt-4">
+            <h3>Tags</h3>
+            <ul class="list-group" id="tagsUl">
+                <!-- Tags will be appended here -->
+            </ul>
+        </div>
+
+        <!-- Modal for showing progress and download links -->
+        <div class="modal fade" id="clipsModal" tabindex="-1" role="dialog" aria-labelledby="clipsModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-scrollable" role="document">
+            <div class="modal-content bg-dark text-white">
+              <div class="modal-header">
+                <h5 class="modal-title" id="clipsModalLabel">Clips Export</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body" id="clipsModalBody">
+                <!-- Progress and download links will be displayed here -->
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn" data-dismiss="modal">Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+    </div>
+
+    <!-- Include Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <!-- Note: In production, use the minified versions -->
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.js"></script>
+
+    <script>
+        var videoPlayer = document.getElementById('videoPlayer');
+        var videoFileInput = document.getElementById('videoFileInput');
+        var videoFileLabel = document.querySelector('.custom-file-label');
+        var tags = [];
+        var tagsUl = document.getElementById('tagsUl');
+        var timeline = document.getElementById('timeline');
+        var tagTypeSelect = document.getElementById('tagType');
+        var tagDescriptionInput = document.getElementById('tagDescription');
+        var sessionNameInput = document.getElementById('sessionName');
+        var startTagButton = document.getElementById('startTagButton');
+        var stopTagButton = document.getElementById('stopTagButton');
+        var playHighlightsButton = document.getElementById('playHighlightsButton');
+        var exportClipsButton = document.getElementById('exportClipsButton');
+        var concatenateClipsButton = document.getElementById('concatenateClipsButton');
+        var uploadProgress = document.getElementById('uploadProgress');
+        var currentTag = null; // To hold the tag being created
+        var highlightedTagIndex = null;
+        var highlightsQueue = []; // Queue of highlights to play
+        var isPlayingHighlights = false;
+        var uploadedVideoFilename = null; // Store the uploaded video filename
+
+        // Modify the video file input handling to upload the video to the server
+        videoFileInput.addEventListener('change', function() {
+            var file = this.files[0];
+            if (file) {
+                videoFileLabel.textContent = file.name;
+                var fileURL = URL.createObjectURL(file);
+                videoPlayer.src = fileURL;
+                tags = []; // Reset tags when a new video is loaded
+                currentTag = null;
+                renderTagList();
+                renderTimeline();
+
+                // Disable buttons that depend on the uploaded video
+                exportClipsButton.disabled = true;
+                concatenateClipsButton.disabled = true;
+                uploadedVideoFilename = null;
+                uploadProgress.textContent = 'Uploading video...';
+
+                // Upload the video to the server
+                var formData = new FormData();
+                formData.append('videoFile', file);
+
+                fetch('/upload_video', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Upload response:', data); // Debugging
+                    if (data.error) {
+                        alert(data.error);
+                        uploadedVideoFilename = null;
+                        uploadProgress.textContent = 'Upload failed.';
+                    } else {
+                        // Store the filename returned by the server
+                        uploadedVideoFilename = data.filename;
+                        console.log('Uploaded video filename:', uploadedVideoFilename); // Debugging
+                        uploadProgress.textContent = 'Upload successful.';
+                        // Enable buttons that depend on the uploaded video
+                        exportClipsButton.disabled = false;
+                        concatenateClipsButton.disabled = false;
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error during upload:', error);
+                    uploadProgress.textContent = 'Upload error.';
+                });
+
+            } else {
+                videoFileLabel.textContent = 'Choose Video File';
+                uploadedVideoFilename = null;
+            }
+        });
+
+        videoFileLabel.addEventListener('click', function() {
+            videoFileInput.click();
+        });
+
+        function setPlaybackRate(rate) {
+            videoPlayer.playbackRate = rate;
+        }
+
+        function startTag() {
+            if (!videoPlayer.paused) {
+                alert('Please pause the video to start tagging.');
+                return;
+            }
+            if (currentTag) {
+                alert('A tag is already in progress.');
+                return;
+            }
+            var startTime = videoPlayer.currentTime;
+            currentTag = {
+                startTime: formatTime(startTime),
+                startSeconds: startTime,
+                endTime: null,
+                endSeconds: null,
+                tagType: tagTypeSelect.value,
+                description: tagDescriptionInput.value || '',
+            };
+            startTagButton.disabled = true;
+            stopTagButton.disabled = false;
+        }
+
+        function stopTag() {
+            if (!currentTag) {
+                alert('No tag in progress.');
+                return;
+            }
+            var endTime = videoPlayer.currentTime;
+            if (endTime < currentTag.startSeconds) {
+                alert('End time cannot be before start time.');
+                return;
+            }
+            currentTag.endTime = formatTime(endTime);
+            currentTag.endSeconds = endTime;
+            tags.push(currentTag);
+            currentTag = null;
+            renderTagList();
+            renderTimeline();
+            tagDescriptionInput.value = '';
+            startTagButton.disabled = false;
+            stopTagButton.disabled = true;
+        }
+
+        function renderTagList() {
+            tagsUl.innerHTML = '';
+            tags.forEach((tag, index) => {
+                var li = document.createElement('li');
+                li.className = 'list-group-item d-flex justify-content-between align-items-center tag-item';
+                li.setAttribute('data-index', index);
+                li.innerHTML = `
+                    <span onclick="selectTag(${index})">${tag.startTime} - ${tag.endTime} [${tag.tagType}] ${tag.description}</span>
+                    <div>
+                        <button class="btn btn-link btn-sm" onclick="editTag(event, ${index})">Edit</button>
+                        <button class="btn btn-link btn-remove" onclick="removeTag(event, ${index})">&times;</button>
+                    </div>
+                `;
+                tagsUl.appendChild(li);
+            });
+        }
+
+        function renderTimeline() {
+            timeline.innerHTML = '';
+            var duration = videoPlayer.duration || 1; // Avoid division by zero
+            tags.forEach((tag, index) => {
+                var tagRange = document.createElement('div');
+                tagRange.className = 'tag-range';
+                var leftPercent = (tag.startSeconds / duration) * 100;
+                var widthPercent = ((tag.endSeconds - tag.startSeconds) / duration) * 100;
+                tagRange.style.left = leftPercent + '%';
+                tagRange.style.width = widthPercent + '%';
+                tagRange.setAttribute('data-index', index);
+                tagRange.addEventListener('click', function(event) {
+                    event.stopPropagation();
+                    selectTag(index);
+                });
+                timeline.appendChild(tagRange);
+            });
+        }
+
+        function selectTag(index) {
+            var tagItems = document.querySelectorAll('.tag-item');
+            tagItems.forEach(item => item.classList.remove('active'));
+            var selectedTagItem = tagItems[index];
+            selectedTagItem.classList.add('active');
+
+            var tagRanges = document.querySelectorAll('.tag-range');
+            tagRanges.forEach(range => range.classList.remove('highlighted'));
+            var selectedTagRange = tagRanges[index];
+            selectedTagRange.classList.add('highlighted');
+
+            highlightedTagIndex = index;
+
+            var tag = tags[index];
+            videoPlayer.currentTime = tag.startSeconds;
+            videoPlayer.play();
+
+            // Monitor the video time to highlight/unhighlight the tag
+            videoPlayer.addEventListener('timeupdate', highlightTagDuringPlayback);
+        }
+
+        function highlightTagDuringPlayback() {
+            if (highlightedTagIndex === null) return;
+            var tag = tags[highlightedTagIndex];
+            if (videoPlayer.currentTime >= tag.startSeconds && videoPlayer.currentTime <= tag.endSeconds) {
+                // Keep highlighting
+            } else {
+                // Remove highlighting
+                var tagItems = document.querySelectorAll('.tag-item');
+                tagItems[highlightedTagIndex].classList.remove('active');
+
+                var tagRanges = document.querySelectorAll('.tag-range');
+                tagRanges[highlightedTagIndex].classList.remove('highlighted');
+
+                highlightedTagIndex = null;
+                videoPlayer.removeEventListener('timeupdate', highlightTagDuringPlayback);
+                if (isPlayingHighlights) {
+                    playNextHighlight();
+                }
+            }
+        }
+
+        function removeTag(event, index) {
+            event.stopPropagation(); // Prevent triggering selectTag
+            tags.splice(index, 1);
+            renderTagList();
+            renderTimeline();
+            if (highlightedTagIndex === index) {
+                highlightedTagIndex = null;
+                videoPlayer.removeEventListener('timeupdate', highlightTagDuringPlayback);
+            }
+        }
+
+        function editTag(event, index) {
+            event.stopPropagation(); // Prevent triggering selectTag
+            var tag = tags[index];
+            var newTagType = prompt('Edit Tag Type:', tag.tagType);
+            if (newTagType === null) return; // Cancelled
+            var newDescription = prompt('Edit Tag Description:', tag.description);
+            if (newDescription === null) return; // Cancelled
+            tag.tagType = newTagType;
+            tag.description = newDescription;
+            renderTagList();
+        }
+
+        function formatTime(seconds) {
+            var totalSeconds = Math.floor(seconds);
+            var hours = Math.floor(totalSeconds / 3600);
+            var minutes = Math.floor((totalSeconds % 3600) / 60);
+            var secs = totalSeconds % 60;
+            return [pad(hours), pad(minutes), pad(secs)].join(':');
+        }
+
+        function pad(num) {
+            return num.toString().padStart(2, '0');
+        }
+
+        function timeStringToSeconds(timeString) {
+            var parts = timeString.split(':').map(Number);
+            var seconds = 0;
+            if (parts.length === 3) {
+                // HH:MM:SS
+                seconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
+            } else if (parts.length === 2) {
+                // MM:SS
+                seconds = parts[0] * 60 + parts[1];
+            } else if (parts.length === 1) {
+                // SS
+                seconds = parts[0];
+            }
+            return seconds;
+        }
+
+        function exportTags() {
+            if (tags.length === 0) {
+                alert('No tags to export.');
+                return;
+            }
+            fetch('/export', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({tags: tags}),
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                // Automatically download the exported file
+                window.location.href = '/exports/' + data.filename;
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+
+        function saveSession() {
+            if (tags.length === 0) {
+                alert('No tags to save.');
+                return;
+            }
+            var sessionName = sessionNameInput.value || 'session';
+            fetch('/save_session', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({tags: tags, sessionName: sessionName}),
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+
+        function loadSession() {
+            var sessionName = sessionNameInput.value || 'session';
+            fetch('/load_session', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({sessionName: sessionName}),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    var loadedTags = data.tags;
+                    tags = [];
+                    var startTag = null;
+                    for (var i = 0; i < loadedTags.length; i++) {
+                        var tag = loadedTags[i];
+                        // Check if tag has start and end times (new format)
+                        if ('startSeconds' in tag && 'endSeconds' in tag) {
+                            tags.push(tag);
+                        }
+                        // Handle old format with 'seconds' property
+                        else if ('seconds' in tag) {
+                            if (tag.tagType.toLowerCase() === 'start') {
+                                // Start tag
+                                startTag = {
+                                    startTime: tag.time,
+                                    startSeconds: tag.seconds,
+                                    endTime: null,
+                                    endSeconds: null,
+                                    tagType: 'Highlight',
+                                    description: tag.tag || '',
+                                };
+                            } else if (tag.tagType.toLowerCase() === 'stop') {
+                                // Stop tag
+                                if (startTag) {
+                                    startTag.endTime = tag.time;
+                                    startTag.endSeconds = tag.seconds;
+                                    tags.push(startTag);
+                                    startTag = null;
+                                } else {
+                                    // Orphaned Stop tag
+                                    alert('Found a Stop tag without a matching Start tag.');
+                                }
+                            } else {
+                                // Single point tag
+                                var seconds = tag.seconds;
+                                tags.push({
+                                    startTime: tag.time,
+                                    endTime: tag.time,
+                                    startSeconds: seconds,
+                                    endSeconds: seconds,
+                                    tagType: tag.tagType || 'Note',
+                                    description: tag.tag || '',
+                                });
+                            }
+                        } else {
+                            // Unknown format
+                            alert('Unknown tag format encountered during session loading.');
+                        }
+                    }
+                    renderTagList();
+                    renderTimeline();
+                    alert('Session loaded successfully.');
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+
+        // Fix the issue where the video duration is not available immediately
+        videoPlayer.addEventListener('loadedmetadata', function() {
+            renderTimeline();
+        });
+
+        // Keyboard Shortcuts
+        document.addEventListener('keydown', function(event) {
+            if (event.target.tagName.toLowerCase() === 'input') return; // Ignore when typing in input fields
+            switch(event.key) {
+                case ' ':
+                    event.preventDefault();
+                    if (videoPlayer.paused) {
+                        videoPlayer.play();
+                    } else {
+                        videoPlayer.pause();
+                    }
+                    break;
+                case 's':
+                    if (startTagButton.disabled === false) {
+                        startTag();
+                    } else if (stopTagButton.disabled === false) {
+                        stopTag();
+                    }
+                    break;
+                case 'h':
+                    playHighlights();
+                    break;
+                case 'ArrowRight':
+                    videoPlayer.currentTime += 5;
+                    break;
+                case 'ArrowLeft':
+                    videoPlayer.currentTime -= 5;
+                    break;
+            }
+        });
+
+        // Function to play highlights
+        function playHighlights() {
+            if (isPlayingHighlights) {
+                // Stop playing highlights
+                isPlayingHighlights = false;
+                highlightsQueue = [];
+                videoPlayer.pause();
+                highlightedTagIndex = null;
+                videoPlayer.removeEventListener('timeupdate', highlightTagDuringPlayback);
+                videoPlayer.removeEventListener('timeupdate', monitorHighlightPlayback);
+                alert('Stopped playing highlights.');
+                return;
+            }
+            var highlightTags = tags.filter(tag => tag.tagType.toLowerCase() === 'highlight');
+            if (highlightTags.length === 0) {
+                alert('No highlights to play.');
+                return;
+            }
+            // Sort highlights by start time
+            highlightTags.sort((a, b) => a.startSeconds - b.startSeconds);
+            highlightsQueue = highlightTags.slice(); // Clone the array
+            isPlayingHighlights = true;
+            playNextHighlight();
+        }
+
+        function playNextHighlight() {
+            if (!isPlayingHighlights || highlightsQueue.length === 0) {
+                // Finished playing all highlights
+                isPlayingHighlights = false;
+                return;
+            }
+            var tag = highlightsQueue.shift();
+            var index = tags.indexOf(tag);
+            selectTag(index);
+            videoPlayer.addEventListener('timeupdate', monitorHighlightPlayback);
+        }
+
+        function monitorHighlightPlayback() {
+            if (highlightedTagIndex === null) return;
+            var tag = tags[highlightedTagIndex];
+            if (videoPlayer.currentTime >= tag.endSeconds) {
+                videoPlayer.removeEventListener('timeupdate', monitorHighlightPlayback);
+                // Move to next highlight
+                playNextHighlight();
+            }
+        }
+
+        // Function to export clips individually
+        function exportClips() {
+            if (tags.length === 0) {
+                alert('No tags to export.');
+                return;
+            }
+            if (!uploadedVideoFilename) {
+                alert('Video file must be uploaded to export clips.');
+                return;
+            }
+            var defaultOutputNameBase = uploadedVideoFilename.split('.').slice(0, -1).join('.');
+            var outputNameBase = prompt('Enter base name for output clips:', defaultOutputNameBase);
+            if (outputNameBase === null) return; // Cancelled
+
+            var modalBody = document.getElementById('clipsModalBody');
+            modalBody.innerHTML = 'Creating clips...';
+            $('#clipsModal').modal('show');
+
+            fetch('/create_clips', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({tags: tags, videoFilename: uploadedVideoFilename, outputNameBase: outputNameBase}),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    modalBody.innerHTML = 'Error: ' + data.error;
+                } else {
+                    var clips = data.clips;
+                    modalBody.innerHTML = '<p>Clips created successfully:</p><ul>';
+                    clips.forEach(clip => {
+                        modalBody.innerHTML += `<li><a href="/clips/${clip}" download>${clip}</a></li>`;
+                    });
+                    modalBody.innerHTML += '</ul>';
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                modalBody.innerHTML = 'Error: ' + error;
+            });
+        }
+
+        // Function to concatenate clips
+        function concatenateClips() {
+            if (tags.length === 0) {
+                alert('No tags to concatenate.');
+                return;
+            }
+            if (!uploadedVideoFilename) {
+                alert('Video file must be uploaded to concatenate clips.');
+                return;
+            }
+            var defaultOutputName = uploadedVideoFilename.split('.').slice(0, -1).join('_') + '_concatenated.mp4';
+            var outputName = prompt('Enter name for concatenated video:', defaultOutputName);
+            if (outputName === null) return; // Cancelled
+
+            var modalBody = document.getElementById('clipsModalBody');
+            modalBody.innerHTML = 'Creating and concatenating clips...';
+            $('#clipsModal').modal('show');
+
+            // First, create the clips
+            var outputNameBase = uploadedVideoFilename.split('.').slice(0, -1).join('.');
+            fetch('/create_clips', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({tags: tags, videoFilename: uploadedVideoFilename, outputNameBase: outputNameBase}),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    modalBody.innerHTML = 'Error: ' + data.error;
+                } else {
+                    var clips = data.clips;
+                    // Now, concatenate the clips
+                    fetch('/concatenate_clips', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({clips: clips, outputName: outputName}),
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            modalBody.innerHTML = 'Error: ' + data.error;
+                        } else {
+                            var outputFile = data.outputFile;
+                            modalBody.innerHTML = `<p>Concatenated video created successfully:</p>
+                            <a href="/clips/${outputFile}" download>${outputFile}</a>`;
+                        }
+                    })
+                    .catch((error) => {
+                        console.error('Error:', error);
+                        modalBody.innerHTML = 'Error: ' + error;
+                    });
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                modalBody.innerHTML = 'Error: ' + error;
+            });
+        }
+
+    </script>
+</body>
+</html>
